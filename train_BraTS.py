@@ -19,7 +19,7 @@ parser.add_argument('--root_path', type=str,
                     default='/home/sist/kdzhang/data/Train/', help='root dir for data')
 parser.add_argument('--output', type=str, default='/home/sist/kdzhang/results/SAMed_accelerate')
 parser.add_argument('--dataset', type=str,
-                    default='Synapse', help='experiment_name')
+                    default='BraTS', help='experiment_name')
 parser.add_argument('--list_dir', type=str,
                     default='./lists/lists_Synapse', help='list dir')
 parser.add_argument('--num_classes', type=int,
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     with open(config_file, 'w') as f:
         f.writelines(config_items)
 
-    trainer = {'Synapse': trainer_synapse}
+    trainer = {'BraTS': trainer_BraTS}
     trainer[dataset_name](args, net, snapshot_path, multimask_output, low_res)
 parser.add_argument('--ckpt', type=str, default='/content/samed_codes/sam_vit_h_4b8939.pth',
                     help='Pretrained checkpoint')
