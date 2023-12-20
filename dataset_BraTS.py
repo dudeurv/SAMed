@@ -20,7 +20,7 @@ def map_labels(label):
         mapped_label[label == k] = v
     return mapped_label
 
-class BraTS_Dataset(Dataset):
+class BraTS_dataset(Dataset):
     def __init__(self, base_dir):
         self.img_path_all = glob(base_dir + '/BraTS-GLI-t1c/*.png')
         self.mask_path_all = [img_path.replace('t1c', 'seg') for img_path in self.img_path_all]
