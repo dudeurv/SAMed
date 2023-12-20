@@ -33,4 +33,6 @@ class BraTS_dataset(Dataset):
         image = normalise_intensity(image)
         label = iio.imread(self.mask_path_all[index])
         label = map_labels(label)
+        image = torch.from_numpy(image)
+        label = torch.from_numpy(label) 
         return image, label
