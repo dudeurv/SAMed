@@ -80,7 +80,7 @@ if __name__ == "__main__":
     torch.cuda.manual_seed(args.seed)
     dataset_name = args.dataset
     dataset_config = {
-        'Synapse': {
+        'BraTS': {
             'root_path': args.root_path,
             'list_dir': args.list_dir,
             'num_classes': args.num_classes,
@@ -182,4 +182,4 @@ if __name__ == "__main__":
         f.writelines(config_items)
 
     # Start training
-    trainer_synapse(args, net, snapshot_path, multimask_output, low_res)
+    trainer_BraTS(args, net, snapshot_path, multimask_output, low_res)
