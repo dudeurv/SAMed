@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset, DataLoader
 from glob import glob
 import imageio as iio
