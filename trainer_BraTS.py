@@ -72,7 +72,6 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     for epoch_num in iterator:
         for i_batch, (image_batch, label_batch) in enumerate(trainloader):
             image_batch, label_batch = image_batch.cuda(), label_batch.cuda()
-            low_res_label_batch = low_res_label_batch.cuda()
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             if args.use_amp:
                 with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=args.use_amp):
