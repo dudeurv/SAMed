@@ -70,23 +70,21 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     iterator = tqdm(range(max_epoch), ncols=70)
     skip_hard_nums = 0
     for epoch_num in iterator:
-        for i_batch, sampled_batch in enumerate(trainloader):
-            image_batch, label_batch = sampled_batch['image'], sampled_batch['label']  # [b, c, h, w], [b, h, w]
-            low_res_label_batch = sampled_batch['low_res_label']
+        for i_batch, (image_batch, label_batch) in enumerate(trainloader):
             image_batch, label_batch = image_batch.cuda(), label_batch.cuda()
             low_res_label_batch = low_res_label_batch.cuda()
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             if args.use_amp:
                 with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=args.use_amp):
                     outputs = model(image_batch, multimask_output, args.img_size)
-                    loss, loss_ce, loss_dice = calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, args.dice_param)
+                    loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
             else:
                 outputs = model(image_batch, multimask_output, args.img_size)
-                loss, loss_ce, loss_dice = calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, args.dice_param)
+                loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
                 optimizer.zero_grad()
                 loss.backward()
                 if args.skip_hard and iter_num > 3 * args.warmup_period and loss.item() > 0.4:
