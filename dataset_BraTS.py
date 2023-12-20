@@ -33,5 +33,4 @@ class BraTS_dataset(Dataset):
         image = normalise_intensity(image)
         label = iio.imread(self.mask_path_all[index])
         label = map_labels(label)
-        sample = {'image': image, 'label': label}
-        return sample
+        return image, label
