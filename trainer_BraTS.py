@@ -28,7 +28,7 @@ def calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, dice_weight:floa
 
 
 def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
-    from dataset_BraTS import BraTS_dataset, RandomGenerator
+    from dataset_BraTS import BraTS_dataset
     logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
