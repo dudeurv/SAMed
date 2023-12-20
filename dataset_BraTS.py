@@ -12,6 +12,8 @@ def normalise_intensity(image, ROI_thres=0.1):
     mean = np.mean(ROI)
     std = np.std(ROI)
     ROI_norm = (ROI - mean) / (std + 1e-8) # Normalise ROI
+    ROI_norm = np.clip(ROI_norm, 0, 3)  # Clamping values to be between 0 and 3
+
     return ROI_norm
 
 def map_labels(label):
