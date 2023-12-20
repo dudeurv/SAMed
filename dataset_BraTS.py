@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset, DataLoader
 from glob import glob
-import imageio.v2 as iio
+import imageio as iio
 import matplotlib.pyplot as plt
 from glob import glob
 import numpy as np
