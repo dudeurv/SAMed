@@ -25,7 +25,7 @@ class Sam(nn.Module):
         image_encoder: ImageEncoderViT,
         prompt_encoder: PromptEncoder,
         mask_decoder: MaskDecoder,
-        pixel_mean: List[float] = [123.675]  # Adjusted for grayscale
+        pixel_mean: List[float] = [123.675],  # Adjusted for grayscale
         pixel_std: List[float] = [58.395]    # Adjusted for grayscale
     ) -> None:
         """
