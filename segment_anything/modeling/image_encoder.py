@@ -20,7 +20,7 @@ class ImageEncoderViT(nn.Module):
         self,
         img_size: int = 1024,
         patch_size: int = 16,
-        in_chans: int = 3,
+        in_chans: int = 1,  # Change from 3 to 1 for grayscale images
         embed_dim: int = 768,
         depth: int = 12,
         num_heads: int = 12,
@@ -372,7 +372,7 @@ class PatchEmbed(nn.Module):
         kernel_size: Tuple[int, int] = (16, 16),
         stride: Tuple[int, int] = (16, 16),
         padding: Tuple[int, int] = (0, 0),
-        in_chans: int = 3,
+        in_chans: int = 1,  # Change from 3 to 1 for grayscale images
         embed_dim: int = 768,
     ) -> None:
         """
