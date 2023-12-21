@@ -26,7 +26,7 @@ class Sam(nn.Module):
         prompt_encoder: PromptEncoder,
         mask_decoder: MaskDecoder,
         pixel_mean: List[float] = [123.675],  # Adjusted for grayscale
-        pixel_std: List[float] = [58.395]    # Adjusted for grayscale
+        pixel_std: List[float] = [58.395],    # Adjusted for grayscale
     ) -> None:
         """
         SAM predicts object masks from an image and input prompts.
@@ -46,7 +46,7 @@ class Sam(nn.Module):
         self.mask_decoder = mask_decoder
         self.register_buffer("pixel_mean", torch.Tensor(pixel_mean).view(-1, 1, 1), False)
         self.register_buffer("pixel_std", torch.Tensor(pixel_std).view(-1, 1, 1), False)
-
+        print(self.pixel_mean.shape)
     @property
     def device(self) -> Any:
         return self.pixel_mean.device
@@ -195,11 +195,6 @@ class Sam(nn.Module):
         return masks
 
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
-        """Normalize pixel values and pad to a square input."""
-        # Normalize colors
-        print(x.shape)
-        print(self.pixel_mean.shape)
-        x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
         h, w = x.shape[-2:]
