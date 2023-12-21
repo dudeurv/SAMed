@@ -38,6 +38,4 @@ class BraTS_dataset(Dataset):
         label = map_labels(label)
         image = torch.from_numpy(image)
         label = torch.from_numpy(label) 
-        image = np.stack([image] * 3, axis=-1)  # Stack grayscale image 3 times along the channel axis
-        label = np.stack([label] * 3, axis=-1)  # Stack grayscale image 3 times along the channel axis
         return image, label
