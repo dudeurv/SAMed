@@ -23,11 +23,11 @@ parser.add_argument('--dataset', type=str,
 parser.add_argument('--num_classes', type=int,
                     default=8, help='output channel of network')
 parser.add_argument('--max_iterations', type=int,
-                    default=30000, help='maximum epoch number to train')
+                    default=1000, help='maximum epoch number to train')
 parser.add_argument('--max_epochs', type=int,
-                    default=200, help='maximum epoch number to train')
+                    default=100, help='maximum epoch number to train')
 parser.add_argument('--stop_epoch', type=int,
-                    default=160, help='maximum epoch number to train')
+                    default=60, help='maximum epoch number to train')
 parser.add_argument('--batch_size', type=int,
                     default=12, help='batch_size per gpu')
 parser.add_argument('--n_gpu', type=int, default=2, help='total gpu')
