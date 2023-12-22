@@ -16,12 +16,10 @@ from icecream import ic
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='/home/sist/kdzhang/data/Train/', help='root dir for data')
-parser.add_argument('--output', type=str, default='/home/sist/kdzhang/results/SAMed_accelerate')
+                    default='/data/LarryXu/Synapse/preprocessed_data/train_npz', help='root dir for data')
+parser.add_argument('--output', type=str, default='/output/sam/results')
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')
-parser.add_argument('--list_dir', type=str,
-                    default='./lists/lists_Synapse', help='list dir')
 parser.add_argument('--num_classes', type=int,
                     default=8, help='output channel of network')
 parser.add_argument('--max_iterations', type=int,
@@ -31,8 +29,8 @@ parser.add_argument('--max_epochs', type=int,
 parser.add_argument('--stop_epoch', type=int,
                     default=160, help='maximum epoch number to train')
 parser.add_argument('--batch_size', type=int,
-                    default=24, help='batch_size per gpu')
-parser.add_argument('--n_gpu', type=int, default=1, help='total gpu')
+                    default=12, help='batch_size per gpu')
+parser.add_argument('--n_gpu', type=int, default=2, help='total gpu')
 parser.add_argument('--deterministic', type=int, default=1,
                     help='whether use deterministic training')
 parser.add_argument('--base_lr', type=float, default=0.005,
@@ -42,8 +40,8 @@ parser.add_argument('--img_size', type=int,
 parser.add_argument('--seed', type=int,
                     default=1234, help='random seed')
 parser.add_argument('--vit_name', type=str,
-                    default='vit_h', help='select one vit model')
-parser.add_argument('--ckpt', type=str, default='/home/sist/kdzhang/data/sam_vit_h_4b8939.pth',
+                    default='vit_b', help='select one vit model')
+parser.add_argument('--ckpt', type=str, default='checkpoints/sam_vit_b_01ec64.pth',
                     help='Pretrained checkpoint')
 parser.add_argument('--lora_ckpt', type=str, default=None, help='Finetuned lora checkpoint')
 parser.add_argument('--rank', type=int, default=4, help='Rank for LoRA adaptation')
@@ -53,20 +51,9 @@ parser.add_argument('--warmup_period', type=int, default=250,
 parser.add_argument('--AdamW', action='store_true', help='If activated, use AdamW to finetune SAM model')
 parser.add_argument('--module', type=str, default='sam_lora_image_encoder')
 parser.add_argument('--dice_param', type=float, default=0.8)
-
-parser.add_argument('--lr_exp', type=float, default=0.9, help='The learning rate decay expotential')
-
-# acceleration choices
-parser.add_argument('--tf32', action='store_true', help='If activated, use tf32 to accelerate the training process')
-parser.add_argument('--compile', action='store_true', help='If activated, compile the training model for acceleration')
-parser.add_argument('--use_amp', action='store_true', help='If activated, adopt mixed precision for acceleration')
-
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    if args.tf32:
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
     if not args.deterministic:
         cudnn.benchmark = True
         cudnn.deterministic = False
@@ -109,8 +96,6 @@ if __name__ == "__main__":
 
     pkg = import_module(args.module)
     net = pkg.LoRA_Sam(sam, args.rank).cuda()
-    if args.compile:
-        net = torch.compile(net)
 
     # net = LoRA_Sam(sam, args.rank).cuda()
     if args.lora_ckpt is not None:
@@ -133,53 +118,3 @@ if __name__ == "__main__":
 
     trainer = {'BraTS': trainer_BraTS}
     trainer[dataset_name](args, net, snapshot_path, multimask_output, low_res)
-parser.add_argument('--ckpt', type=str, default='/content/samed_codes/sam_vit_h_4b8939.pth',
-                    help='Pretrained checkpoint')
-parser.add_argument('--lora_ckpt', type=str, default=None, help='Finetuned lora checkpoint')
-parser.add_argument('--rank', type=int, default=4, help='Rank for LoRA adaptation')
-parser.add_argument('--warmup', action='store_true', help='If activated, warp up the learning from a lower lr to the base_lr')
-parser.add_argument('--warmup_period', type=int, default=250,
-                    help='Warp up iterations, only valid whrn warmup is activated')
-parser.add_argument('--AdamW', action='store_true', help='If activated, use AdamW to finetune SAM model')
-parser.add_argument('--module', type=str, default='sam_lora_image_encoder')
-parser.add_argument('--dice_param', type=float, default=0.8)
-
-parser.add_argument('--lr_exp', type=float, default=0.9, help='The learning rate decay expotential')
-
-# acceleration choices
-parser.add_argument('--tf32', action='store_true', help='If activated, use tf32 to accelerate the training process')
-parser.add_argument('--compile', action='store_true', help='If activated, compile the training model for acceleration')
-parser.add_argument('--use_amp', action='store_true', help='If activated, adopt mixed precision for acceleration')
-
-args = parser.parse_args()
-
-if __name__ == "__main__":
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-
-    # Create snapshot path
-    snapshot_path = os.path.join(args.output, f"exp_{args.vit_name}_bs{args.batch_size}_lr{args.base_lr}_epochs{args.max_epochs}")
-    if not os.path.exists(snapshot_path):
-        os.makedirs(snapshot_path)
-
-    # Load the model
-    sam = sam_model_registry[args.vit_name](checkpoint=args.ckpt)
-    image_embedding_size = sam.prompt_encoder.image_embedding_size[0]
-
-    pkg = import_module(args.module)
-    net = pkg.LoRA_Sam(sam, args.rank)  # Removed .cuda()
-    if args.lora_ckpt is not None:
-        net.load_lora_parameters(args.lora_ckpt)
-
-    multimask_output = args.num_classes > 1
-    low_res = img_embedding_size * 4
-
-    # Write configuration to a file
-    config_file = os.path.join(snapshot_path, 'config.txt')
-    config_items = [f'{key}: {value}\n' for key, value in args.__dict__.items()]
-    with open(config_file, 'w') as f:
-        f.writelines(config_items)
-
-    # Start training
-    trainer_BraTS(args, net, snapshot_path, multimask_output, low_res)
