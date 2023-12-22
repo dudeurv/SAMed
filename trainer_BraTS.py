@@ -98,7 +98,8 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             
             # Proceed with loss calculation
 
-            
+            label_batch = torch.clamp(label_batch, 0, num_classes-1)
+
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             outputs = model(image_batch, multimask_output, args.img_size)
             # Check the shape and content of the model output
