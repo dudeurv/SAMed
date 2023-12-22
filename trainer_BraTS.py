@@ -86,6 +86,18 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             print("Transformed Label Batch Shape:", label_batch.shape)
             print("Max, Min of Image Batch:", image_batch.max(), image_batch.min())
             print("Unique labels after transform:", label_batch.unique())
+
+            # Inside training loop before loss calculation
+
+            # Verify and correct labels if necessary
+            unique_labels = label_batch.unique()
+            if not torch.all((unique_labels >= 0) & (unique_labels < num_classes)):
+                print(f"Warning: Found unexpected labels {unique_labels}. Correcting them.")
+                # Handle or correct the labels here, e.g., by setting out-of-range values to a default class
+                # label_batch = correct_labels_function(label_batch)  # Implement this function according to your needs
+            
+            # Proceed with loss calculation
+
             
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             outputs = model(image_batch, multimask_output, args.img_size)
