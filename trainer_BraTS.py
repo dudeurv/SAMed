@@ -19,10 +19,10 @@ from torchvision import transforms
 from icecream import ic
 
 
-def calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
+def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     low_res_logits = outputs['low_res_logits']
-    loss_ce = ce_loss(low_res_logits, low_res_label_batch[:].long())
-    loss_dice = dice_loss(low_res_logits, low_res_label_batch, softmax=True)
+    loss_ce = ce_loss(low_res_logits, label_batch[:].long())
+    loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
     return loss, loss_ce, loss_dice
 
@@ -76,7 +76,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             outputs = model(image_batch, multimask_output, args.img_size)
-            loss, loss_ce, loss_dice = calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, args.dice_param)
+            loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
