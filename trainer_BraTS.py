@@ -21,6 +21,9 @@ from icecream import ic
 
 def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     low_res_logits = outputs['low_res_logits']
+    print("Low res logits shape:", low_res_logits.shape)
+    print("Label batch shape:", label_batch.shape)
+    print("Unique labels:", label_batch.unique())
     loss_ce = ce_loss(low_res_logits, label_batch[:].long())
     loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
@@ -68,14 +71,27 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     iterator = tqdm(range(max_epoch), ncols=70)
     for epoch_num in iterator:
         for i_batch, (image_batch, label_batch) in enumerate(trainloader):
+            # Original shape of image and label batch
+            print("Original Image Batch Shape:", image_batch.shape)
+            print("Original Label Batch Shape:", label_batch.shape)
+
             image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
             image_batch = image_batch.repeat(1, 3, 1, 1)
             # Resize the target
             label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
             label_batch = label_batch.squeeze(1)
+
+            # Debugging: Check the shapes and value ranges after operations
+            print("Transformed Image Batch Shape:", image_batch.shape)
+            print("Transformed Label Batch Shape:", label_batch.shape)
+            print("Max, Min of Image Batch:", image_batch.max(), image_batch.min())
+            print("Unique labels after transform:", label_batch.unique())
             
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             outputs = model(image_batch, multimask_output, args.img_size)
+            # Check the shape and content of the model output
+            print("Output keys from model:", outputs.keys())  # Adjust according to your model's output
+            print("Shape of 'low_res_logits' from model:", outputs['low_res_logits'].shape)
             loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
             optimizer.zero_grad()
             loss.backward()
