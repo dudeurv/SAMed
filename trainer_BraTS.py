@@ -21,8 +21,6 @@ from icecream import ic
 
 def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     low_res_logits = outputs['low_res_logits']
-    print("Low res logits shape:", low_res_logits.shape)
-    print("Label batch shape:", label_batch.shape)
     print("Unique labels:", label_batch.unique())
     loss_ce = ce_loss(low_res_logits, label_batch[:].long())
     loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
@@ -51,7 +49,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     if args.n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
-    ce_loss = CrossEntropyLoss()
+    ce_loss = CrossEntropyLoss(ignore_index=128)
     dice_loss = DiceLoss(num_classes + 1)
     if args.warmup:
         b_lr = base_lr / args.warmup_period
