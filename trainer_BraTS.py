@@ -42,9 +42,9 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
 
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
-        
-    trainloader = DataLoader(db_train, batch_size=5, shuffle=True, num_workers=2)
-    
+
+    trainloader = DataLoader(db_train, batch_size=5, shuffle=True, num_workers=8, pin_memory=True,
+                             worker_init_fn=worker_init_fn)
     if args.n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
@@ -58,8 +58,6 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
         optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=b_lr, betas=(0.9, 0.999), weight_decay=0.1)
     else:
         optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=b_lr, momentum=0.9, weight_decay=0.0001)  # Even pass the model.parameters(), the `requires_grad=False` layers will not update
-    if args.use_amp:
-        scaler = torch.cuda.amp.GradScaler(enabled=args.use_amp)
     writer = SummaryWriter(snapshot_path + '/log')
     iter_num = 0
     max_epoch = args.max_epochs
@@ -68,7 +66,6 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     logging.info("{} iterations per epoch. {} max iterations ".format(len(trainloader), max_iterations))
     best_performance = 0.0
     iterator = tqdm(range(max_epoch), ncols=70)
-    skip_hard_nums = 0
     for epoch_num in iterator:
         for i_batch, (image_batch, label_batch) in enumerate(trainloader):
             image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
@@ -76,25 +73,13 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             # Resize the target
             label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
             label_batch = label_batch.squeeze(1)
+            
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
-            if args.use_amp:
-                with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=args.use_amp):
-                    outputs = model(image_batch, multimask_output, args.img_size)
-                    loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
-            else:
-                outputs = model(image_batch, multimask_output, args.img_size)
-                loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
-                optimizer.zero_grad()
-                loss.backward()
-                if args.skip_hard and iter_num > 3 * args.warmup_period and loss.item() > 0.4:
-                    skip_hard_nums += 1
-                    print(f'Skip hard nums: {skip_hard_nums}')
-                    continue
-                optimizer.step()
+            outputs = model(image_batch, multimask_output, args.img_size)
+            loss, loss_ce, loss_dice = calc_loss(outputs, low_res_label_batch, ce_loss, dice_loss, args.dice_param)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
             if args.warmup and iter_num < args.warmup_period:
                 lr_ = base_lr * ((iter_num + 1) / args.warmup_period)
                 for param_group in optimizer.param_groups:
@@ -105,7 +90,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                     assert shift_iter >= 0, f'Shift iter is {shift_iter}, smaller than zero'
                 else:
                     shift_iter = iter_num
-                lr_ = base_lr * (1.0 - shift_iter / max_iterations) ** args.lr_exp
+                lr_ = base_lr * (1.0 - shift_iter / max_iterations) ** 0.9  # learning rate adjustment depends on the max iterations
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr_
 
