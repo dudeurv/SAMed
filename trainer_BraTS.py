@@ -76,13 +76,6 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
             label_batch = label_batch.squeeze(1)
 
-
-            # Verify and correct labels if necessary
-            unique_labels = label_batch.unique()
-            if not torch.all((unique_labels >= 0) & (unique_labels < num_classes)):
-            
-            # Proceed with loss calculation
-
             label_batch = torch.clamp(label_batch, 0, num_classes-1)
 
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
