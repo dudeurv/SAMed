@@ -43,7 +43,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
         
-    trainloader = DataLoader(db_train, batch_size=25, shuffle=True, num_workers=2)
+    trainloader = DataLoader(db_train, batch_size=10, shuffle=True, num_workers=2)
     
     if args.n_gpu > 1:
         model = nn.DataParallel(model)
