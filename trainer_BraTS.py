@@ -73,6 +73,8 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
         for i_batch, (image_batch, label_batch) in enumerate(trainloader):
             image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
             image_batch = image_batch.repeat(1, 3, 1, 1)
+            # Resize the target
+            label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
             label_batch = label_batch.squeeze(1)
             assert image_batch.max() <= 3, f'image_batch max: {image_batch.max()}'
             if args.use_amp:
