@@ -69,7 +69,6 @@ if __name__ == "__main__":
     dataset_config = {
         'BraTS': {
             'root_path': args.root_path,
-            'list_dir': args.list_dir,
             'num_classes': args.num_classes,
         }
     }
