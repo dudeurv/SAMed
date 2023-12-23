@@ -57,7 +57,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     iter_num = 0
     max_epoch = args.max_epochs
     stop_epoch = args.stop_epoch
-    best_epoch, best_loss = 0.0, [np.inf, np.inf, np.inf]
+    best_epoch, best_loss = 0.0, np.inf
     max_iterations = args.max_epochs * len(trainloader)  # max_epoch = max_iterations // len(trainloader) + 1
     logging.info("{} iterations per epoch. {} max iterations ".format(len(trainloader), max_iterations))
     best_performance = 0.0
