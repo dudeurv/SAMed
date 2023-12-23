@@ -42,7 +42,14 @@ def test_per_epoch(model, testloader, multimask_output, img_size):
             print(f"label batch 3 {label_batch.shape}")
         
             output = model(image_batch, multimask_output, img_size)
-            loss, loss_ce, loss_dice = calc_loss(output, label_batch, 0.8, num_classes)
+            
+            ce_loss = CrossEntropyLoss(ignore_index=128)
+            dice_loss = DiceLoss(num_classes + 1)
+            low_res_logits = outputs['low_res_logits']
+            loss_ce = ce_loss(low_res_logits, label_batch[:].long())
+            loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
+            loss = (1 - dice_weight) * loss_ce + 0.8 * loss_dice
+
             loss_per_epoch.append(loss.item())
             loss_ce_per_epoch.append(loss_ce.item())
             loss_dice_per_epoch.append(loss_dice.item())
