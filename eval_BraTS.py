@@ -8,6 +8,7 @@ import torch.nn.functional as F
 def test_per_epoch(model, testloader, loss_fn, multimask_output, img_size):
     model.eval()
     loss_per_epoch = []
+    num_classes = 4
     with torch.no_grad():
         for i_batch, (image_batch, label_batch) in enumerate(testloader):
 
@@ -68,6 +69,7 @@ def calculate_dice(confusion_matrix):
 # Define a function to test the model for an epoch and visualize the results
 def vis_per_epoch(model, testloader, multimask_output, img_size):
     model.eval()  
+    num_classes = 4
     fig, axs = plt.subplots(len(testloader), 3, figsize=(1*3, len(testloader)*1), subplot_kw=dict(xticks=[],yticks=[]))
     confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.uint32)
 
