@@ -151,7 +151,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
 
     # Define evaluation batch size and create a DataLoader for the test set
     eval_batch_size = 80
-    test_loader = DataLoader(test_dataset, batch_size=eval_batch_size, shuffle=False, num_workers=2)
+    test_loader = DataLoader(db_test, batch_size=20, shuffle=False, num_workers=2)
     
     # Assume vis_per_epoch is defined and calculates class-wise and overall Dice scores
     dices_per_class = vis_per_epoch(model, test_loader)
