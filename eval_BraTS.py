@@ -4,6 +4,9 @@ import numpy as np
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.functional as F
+from torch.nn.modules.loss import CrossEntropyLoss
+from tqdm import tqdm
+from utils import DiceLoss, Focal_loss
 
 def calc_loss(outputs, label_batch, dice_weight:float=0.8):
     ce_loss = CrossEntropyLoss(ignore_index=128)
