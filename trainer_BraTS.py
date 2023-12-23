@@ -26,6 +26,16 @@ def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
     return loss, loss_ce, loss_dice
 
+def test_per_epoch(model, testloader, loss_fn, device):
+    model.eval()
+    loss_per_epoch = []
+    with torch.no_grad():
+        for batch_idx, (images, labels) in enumerate(testloader):
+            images, labels = images.unsqueeze(1).to(device, dtype=torch.float32), labels.to(device, dtype=torch.long)
+            logits = model(images)
+            loss = loss_fn(logits, labels)
+            loss_per_epoch.append(loss.item())
+    return torch.tensor(loss_per_epoch).mean().item()
 
 def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     from dataset_BraTS import BraTS_dataset
@@ -38,12 +48,15 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     batch_size = args.batch_size * args.n_gpu
     # max_iterations = args.max_iterations
     db_train = BraTS_dataset(base_dir=args.root_path)
+    db_test = BratsDataset(root='/content/samed_codes/Slices/Train')
     print("The length of train set is: {}".format(len(db_train)))
 
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
 
     trainloader = DataLoader(db_train, batch_size=5, shuffle=True, num_workers=8, pin_memory=True,
+                             worker_init_fn=worker_init_fn)
+    testloader = DataLoader(db_test, batch_size=10, shuffle=True, num_workers=8, pin_memory=True,
                              worker_init_fn=worker_init_fn)
     if args.n_gpu > 1:
         model = nn.DataParallel(model)
@@ -62,6 +75,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     iter_num = 0
     max_epoch = args.max_epochs
     stop_epoch = args.stop_epoch
+    best_epoch, best_loss = 0.0, np.inf
     max_iterations = args.max_epochs * len(trainloader)  # max_epoch = max_iterations // len(trainloader) + 1
     logging.info("{} iterations per epoch. {} max iterations ".format(len(trainloader), max_iterations))
     best_performance = 0.0
@@ -99,16 +113,15 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 lr_ = base_lr * (1.0 - shift_iter / max_iterations) ** 0.9  # learning rate adjustment depends on the max iterations
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr_
-
+            
             iter_num = iter_num + 1
-            writer.add_scalar('info/lr', lr_, iter_num)
-            writer.add_scalar('info/total_loss', loss, iter_num)
-            writer.add_scalar('info/loss_ce', loss_ce, iter_num)
-            writer.add_scalar('info/loss_dice', loss_dice, iter_num)
+            if iter_num % 100 == 0:
+                writer.add_scalar('info/lr', lr_, iter_num)
+                writer.add_scalar('info/total_loss', loss, iter_num)
+                writer.add_scalar('info/loss_ce', loss_ce, iter_num)
+                writer.add_scalar('info/loss_dice', loss_dice, iter_num)
+                logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
 
-            logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
-
-            if iter_num % 20 == 0:
                 image = image_batch[1, 0:1, :, :]
                 image = (image - image.min()) / (image.max() - image.min())
                 writer.add_image('train/Image', image, iter_num)
@@ -118,24 +131,26 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 labs = label_batch[1, ...].unsqueeze(0) * 50
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
-        save_interval = 20 # int(max_epoch/6)
-        if (epoch_num + 1) % save_interval == 0:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
-            try:
-                model.save_lora_parameters(save_mode_path)
-            except:
-                model.module.save_lora_parameters(save_mode_path)
-            logging.info("save model to {}".format(save_mode_path))
+        # Testing at the end of each epoch
+        loss_testing = test_per_epoch(model, testloader, ce_loss, device=args.device)  # Make sure to define device in args or elsewhere
 
-        if epoch_num >= max_epoch - 1 or epoch_num >= stop_epoch - 1:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
-            try:
-                model.save_lora_parameters(save_mode_path)
-            except:
-                model.module.save_lora_parameters(save_mode_path)
-            logging.info("save model to {}".format(save_mode_path))
-            iterator.close()
-            break
+        # Update best model if current epoch's loss is lower
+        if loss_testing < best_loss:
+            best_loss = loss_testing
+            best_epoch = epoch_num
+            torch.save(model.state_dict(), os.path.join(snapshot_path, 'model_best_epoch_{:03d}.pth'.format(best_epoch)))
+            logging.info("New best model saved with loss {:.4f}".format(best_loss))
+
+        # Log at the end of each epoch
+        logging.info(f'--- Epoch {epoch_num}/{args.max_epochs}: Training loss = {loss:.4f}, Testing loss = {loss_testing:.4f}, Best loss = {best_loss:.4f}, Best epoch = {best_epoch}')
+
+        if (epoch_num + 1) % args.save_interval == 0 or epoch_num >= args.max_epochs - 1 or epoch_num >= args.stop_epoch - 1:
+            save_mode_path = os.path.join(snapshot_path, 'epoch_{:03d}.pth'.format(epoch_num))
+            torch.save(model.state_dict(), save_mode_path)
+            logging.info("Model saved to {}".format(save_mode_path))
+            if epoch_num >= args.max_epochs - 1 or epoch_num >= args.stop_epoch - 1:
+                iterator.close()
+                break
 
     writer.close()
     return "Training Finished!"
