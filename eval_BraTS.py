@@ -5,6 +5,17 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn.functional as F
 
+def test_per_epoch(model, testloader, loss_fn, device):
+    model.eval()
+    loss_per_epoch = []
+    with torch.no_grad():
+        for batch_idx, (images, labels) in enumerate(testloader):
+            images, labels = images.unsqueeze(1).to(device, dtype=torch.float32), labels.to(device, dtype=torch.long)
+            logits = model(images)
+            loss = loss_fn(logits, labels)
+            loss_per_epoch.append(loss.item())
+    return torch.tensor(loss_per_epoch).mean().item()
+
 # Define a function to calculate the confusion matrix from predictions and ground truths
 def calculate_confusion_matrix_from_arrays(prediction, ground_truth, nr_labels):
     # Stack the ground truth and prediction arrays and transpose
