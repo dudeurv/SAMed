@@ -12,6 +12,8 @@ def calc_loss(outputs, label_batch, dice_weight, num_classes):
     ce_loss = CrossEntropyLoss(ignore_index=128)
     dice_loss = DiceLoss(num_classes + 1)
     low_res_logits = outputs['low_res_logits']
+    print(f"low rest logits:{low_res_logits.shape}")
+    print(f"label batch:{label_batch.shape}")
     loss_ce = ce_loss(low_res_logits, label_batch[:].long())
     loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
@@ -20,6 +22,9 @@ def calc_loss(outputs, label_batch, dice_weight, num_classes):
 def test_per_epoch(model, testloader, multimask_output, img_size):
     model.eval()
     loss_per_epoch = []
+    loss_ce_per_epoch = []
+    loss_dice_per_epoch = []
+    
     num_classes = 4
     with torch.no_grad():
         for i_batch, (image_batch, label_batch) in enumerate(testloader):
@@ -35,8 +40,10 @@ def test_per_epoch(model, testloader, multimask_output, img_size):
             output = model(image_batch, multimask_output, img_size)
             loss, loss_ce, loss_dice = calc_loss(output, label_batch, 0.8, num_classes)
             loss_per_epoch.append(loss.item())
+            loss_ce_per_epoch.append(loss_ce.item())
+            loss_dice_per_epoch.append(loss_dice.item())
             
-    return torch.tensor(loss_per_epoch).mean().item()
+    return torch.tensor(loss_per_epoch).mean().item(), torch.tensor(loss_ce_per_epoch).mean().item(), torch.tensor(loss_dice_per_epoch).mean().item()
 
 
 # Define a function to calculate the confusion matrix from predictions and ground truths
