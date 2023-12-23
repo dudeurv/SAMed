@@ -57,7 +57,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     iter_num = 0
     max_epoch = args.max_epochs
     stop_epoch = args.stop_epoch
-    best_epoch, best_loss = 0.0, np.inf
+    best_epoch, best_loss = 0.0, [np.inf, np.inf, np.inf]
     max_iterations = args.max_epochs * len(trainloader)  # max_epoch = max_iterations // len(trainloader) + 1
     logging.info("{} iterations per epoch. {} max iterations ".format(len(trainloader), max_iterations))
     best_performance = 0.0
@@ -102,7 +102,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 writer.add_scalar('info/total_loss', loss, iter_num)
                 writer.add_scalar('info/loss_ce', loss_ce, iter_num)
                 writer.add_scalar('info/loss_dice', loss_dice, iter_num)
-                logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
+                logging.info('iteration %d : training loss : %f, training loss_ce: %f, training loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
 
                 image = image_batch[1, 0:1, :, :]
                 image = (image - image.min()) / (image.max() - image.min())
@@ -114,17 +114,17 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
         # Testing at the end of each epoch
-        loss_testing = test_per_epoch(model, testloader, multimask_output, args.img_size)  # Make sure to define device in args or elsewhere
+        test_loss, test_loss_ce, test_loss_dice = test_per_epoch(model, testloader, multimask_output, args.img_size) 
 
         # Update best model if current epoch's loss is lower
-        if loss_testing < best_loss:
-            best_loss = loss_testing
+        if test_loss < best_loss:
+            best_loss = test_loss
             best_epoch = epoch_num
             torch.save(model.state_dict(), os.path.join(snapshot_path, 'model_best_epoch_{:03d}.pth'.format(best_epoch)))
             logging.info("New best model saved with loss {:.4f}".format(best_loss))
 
         # Log at the end of each epoch
-        logging.info(f'--- Epoch {epoch_num}/{args.max_epochs}: Training loss = {loss:.4f}, Testing loss = {loss_testing:.4f}, Best loss = {best_loss:.4f}, Best epoch = {best_epoch}')
+        logging.info(f'--- Epoch {epoch_num}/{args.max_epochs}: Training loss = {loss:.4f}, Testing loss = {test_loss:.4f}, Best loss = {best_loss:.4f}, Best epoch = {best_epoch}')
 
         if (epoch_num + 1) % args.save_interval == 0 or epoch_num >= args.max_epochs - 1 or epoch_num >= args.stop_epoch - 1:
             save_mode_path = os.path.join(snapshot_path, 'epoch_{:03d}.pth'.format(epoch_num))
