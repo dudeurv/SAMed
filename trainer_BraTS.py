@@ -123,7 +123,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
         # Testing at the end of each epoch
-        loss_testing = test_per_epoch(model, testloader, ce_loss, "cuda")  # Make sure to define device in args or elsewhere
+        loss_testing = test_per_epoch(model, testloader, ce_loss, multimask_output, args.img_size)  # Make sure to define device in args or elsewhere
 
         # Update best model if current epoch's loss is lower
         if loss_testing < best_loss:
@@ -154,7 +154,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     test_loader = DataLoader(db_test, batch_size=20, shuffle=False, num_workers=2)
     
     # Assume vis_per_epoch is defined and calculates class-wise and overall Dice scores
-    dices_per_class = vis_per_epoch(model, test_loader)
+    dices_per_class = vis_per_epoch(model, testloader, multimask_output, args.img_size):
     dices_per_class_list = np.array(list(dices_per_class.values()))
     logging.info('Class Wise Dice: {}'.format(dices_per_class))
     logging.info('Overall Dice: {:.4f}'.format(np.mean(dices_per_class_list)))
