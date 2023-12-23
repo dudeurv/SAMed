@@ -154,7 +154,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     test_loader = DataLoader(db_test, batch_size=20, shuffle=False, num_workers=2)
     
     # Assume vis_per_epoch is defined and calculates class-wise and overall Dice scores
-    dices_per_class = vis_per_epoch(model, testloader, multimask_output, args.img_size):
+    dices_per_class = vis_per_epoch(model, testloader, multimask_output, args.img_size)
     dices_per_class_list = np.array(list(dices_per_class.values()))
     logging.info('Class Wise Dice: {}'.format(dices_per_class))
     logging.info('Overall Dice: {:.4f}'.format(np.mean(dices_per_class_list)))
