@@ -8,7 +8,7 @@ from torch.nn.modules.loss import CrossEntropyLoss
 from tqdm import tqdm
 from utils import DiceLoss, Focal_loss
 
-def calc_loss(outputs, label_batch, dice_weight:float=0.8, num_classes):
+def calc_loss(outputs, label_batch, dice_weight, num_classes):
     ce_loss = CrossEntropyLoss(ignore_index=128)
     dice_loss = DiceLoss(num_classes + 1)
     low_res_logits = outputs['low_res_logits']
