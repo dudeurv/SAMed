@@ -45,7 +45,7 @@ def test_per_epoch(model, testloader, multimask_output, img_size):
             
             ce_loss = CrossEntropyLoss(ignore_index=128)
             dice_loss = DiceLoss(num_classes + 1)
-            low_res_logits = outputs['low_res_logits']
+            low_res_logits = output['low_res_logits']
             loss_ce = ce_loss(low_res_logits, label_batch[:].long())
             loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
             loss = (1 - dice_weight) * loss_ce + 0.8 * loss_dice
