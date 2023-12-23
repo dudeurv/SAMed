@@ -39,7 +39,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     batch_size = args.batch_size * args.n_gpu
     # max_iterations = args.max_iterations
     db_train = BraTS_dataset(base_dir=args.root_path)
-    db_test = BraTS_dataset(root='/content/samed_codes/Slices/Train')
+    db_test = BraTS_dataset(base_dir='/content/samed_codes/Slices/Test')
     print("The length of train set is: {}".format(len(db_train)))
 
     def worker_init_fn(worker_id):
