@@ -17,7 +17,7 @@ def calc_loss(outputs, label_batch, dice_weight, num_classes):
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
     return loss, loss_ce, loss_dice
 
-def test_per_epoch(model, testloader, loss_fn, multimask_output, img_size):
+def test_per_epoch(model, testloader, multimask_output, img_size):
     model.eval()
     loss_per_epoch = []
     num_classes = 4
