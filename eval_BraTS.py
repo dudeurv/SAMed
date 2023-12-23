@@ -94,7 +94,8 @@ def vis_per_epoch(model, testloader, multimask_output, img_size):
 
             label_batch = torch.clamp(label_batch, 0, num_classes-1)
         
-            logits = model(image_batch, multimask_output, img_size)
+            output = model(image_batch, multimask_output, img_size)
+            logits = outputs['low_res_logits']
 
             prob = F.softmax(logits, dim=1)
             pred_seg = torch.argmax(prob, dim=1)
