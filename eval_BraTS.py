@@ -5,16 +5,26 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn.functional as F
 
-def test_per_epoch(model, testloader, loss_fn, device):
+def test_per_epoch(model, testloader, loss_fn, multimask_output, img_size):
     model.eval()
     loss_per_epoch = []
     with torch.no_grad():
-        for batch_idx, (images, labels) in enumerate(testloader):
-            images, labels = images.unsqueeze(1).to(device, dtype=torch.float32), labels.to(device, dtype=torch.long)
-            logits = model(images)
+        for i_batch, (image_batch, label_batch) in enumerate(testloader):
+
+            image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
+            image_batch = image_batch.repeat(1, 3, 1, 1)
+            
+            label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
+            label_batch = label_batch.squeeze(1)
+
+            label_batch = torch.clamp(label_batch, 0, num_classes-1)
+        
+            logits = model(image_batch, multimask_output, img_size)
             loss = loss_fn(logits, labels)
             loss_per_epoch.append(loss.item())
+            
     return torch.tensor(loss_per_epoch).mean().item()
+
 
 # Define a function to calculate the confusion matrix from predictions and ground truths
 def calculate_confusion_matrix_from_arrays(prediction, ground_truth, nr_labels):
@@ -53,40 +63,43 @@ def calculate_dice(confusion_matrix):
             dice = 2 * float(true_positives) / denom
         dices.append(dice)  # Append the Dice score for the current class to the list
     return dices
-
+    
+    
 # Define a function to test the model for an epoch and visualize the results
-def vis_per_epoch(model, testloader):
-    model.eval()  # Set the model to evaluation mode
-    # Setup the plot for visualization
+def vis_per_epoch(model, testloader, multimask_output, img_size):
+    model.eval()  
     fig, axs = plt.subplots(len(testloader), 3, figsize=(1*3, len(testloader)*1), subplot_kw=dict(xticks=[],yticks=[]))
-    # Initialize an empty confusion matrix
     confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.uint32)
 
     with torch.no_grad():
-        # Iterate over the testloader
-        for batch_idx, (images, labels) in enumerate(testloader):
-            # Prepare images and labels for model input
-            images, labels = images.unsqueeze(1).to(device, dtype=torch.float32), labels.to(device, dtype=torch.long)
-            # Forward pass through the model to get logits
-            logits = model(images)
-            # Apply softmax to get probabilities and then get the predicted segmentation
+        
+        for i_batch, (image_batch, label_batch) in enumerate(testloader):
+
+            image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
+            image_batch = image_batch.repeat(1, 3, 1, 1)
+            
+            label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
+            label_batch = label_batch.squeeze(1)
+
+            label_batch = torch.clamp(label_batch, 0, num_classes-1)
+        
+            logits = model(image_batch, multimask_output, img_size)
+
             prob = F.softmax(logits, dim=1)
             pred_seg = torch.argmax(prob, dim=1)
-            # Update the confusion matrix with predictions
+     
             confusion_matrix += calculate_confusion_matrix_from_arrays(pred_seg.cpu(), labels.cpu(), num_classes)
-            # Visualize the input image, ground truth, and prediction
+    
             img_num = 0
             axs[batch_idx, 0].imshow(images[img_num, 0].cpu().numpy(), cmap='gray')
             axs[batch_idx, 1].imshow(labels[img_num].cpu().numpy(), cmap='gray')
             axs[batch_idx, 2].imshow(pred_seg[img_num].cpu().numpy(), cmap='gray')
 
-    # Exclude the background from the confusion matrix for Dice calculation
     confusion_matrix = confusion_matrix[1:, 1:]
-    # Calculate Dice scores per class
+
     dices_per_class = {'dice_cls:{}'.format(cls + 1): dice
                 for cls, dice in enumerate(calculate_dice(confusion_matrix))}
 
-    # Adjust plot layout and display
     plt.axis('OFF')
     plt.tight_layout()
     plt.show()
