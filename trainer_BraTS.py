@@ -95,23 +95,6 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 lr_ = base_lr * (1.0 - shift_iter / max_iterations) ** 0.9  # learning rate adjustment depends on the max iterations
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr_
-            
-            iter_num = iter_num + 1
-            if iter_num % 100 == 0:
-                writer.add_scalar('info/lr', lr_, iter_num)
-                writer.add_scalar('info/total_loss', loss, iter_num)
-                writer.add_scalar('info/loss_ce', loss_ce, iter_num)
-                writer.add_scalar('info/loss_dice', loss_dice, iter_num)
-                logging.info('iteration %d : training loss : %f, training loss_ce: %f, training loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
-
-                image = image_batch[1, 0:1, :, :]
-                image = (image - image.min()) / (image.max() - image.min())
-                writer.add_image('train/Image', image, iter_num)
-                output_masks = outputs['masks']
-                output_masks = torch.argmax(torch.softmax(output_masks, dim=1), dim=1, keepdim=True)
-                writer.add_image('train/Prediction', output_masks[1, ...] * 50, iter_num)
-                labs = label_batch[1, ...].unsqueeze(0) * 50
-                writer.add_image('train/GroundTruth', labs, iter_num)
 
         # Testing at the end of each epoch
         test_loss, test_loss_ce, test_loss_dice = test_per_epoch(model, testloader, multimask_output, args.img_size) 
@@ -136,18 +119,3 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
 
     writer.close()
     return "Training Finished!"
-
-    num_classes = 4  # Set the number of classes as per your specific task
-    model.load_state_dict(torch.load(os.path.join(snapshot_path, 'model_best_epoch_{:03d}.pth'.format(best_epoch))))
-
-    # Define evaluation batch size and create a DataLoader for the test set
-    eval_batch_size = 80
-    test_loader = DataLoader(db_test, batch_size=20, shuffle=False, num_workers=2)
-    
-    # Assume vis_per_epoch is defined and calculates class-wise and overall Dice scores
-    dices_per_class = vis_per_epoch(model, testloader, multimask_output, args.img_size)
-    dices_per_class_list = np.array(list(dices_per_class.values()))
-    logging.info('Class Wise Dice: {}'.format(dices_per_class))
-    logging.info('Overall Dice: {:.4f}'.format(np.mean(dices_per_class_list)))
-
-    return "Evaluation Finished!"
