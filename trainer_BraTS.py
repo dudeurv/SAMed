@@ -18,7 +18,7 @@ from utils import DiceLoss, Focal_loss
 from torchvision import transforms
 from icecream import ic
 
-from eval_BraTS import test_per_epoch, calculate_confusion_matrix_from_arrays, calculate_dice, vis_per_epoch
+from eval_BraTS import test_per_epoch, vis_per_epoch
 
 def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     low_res_logits = outputs['low_res_logits']
