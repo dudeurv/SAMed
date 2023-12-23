@@ -126,7 +126,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
         # Log at the end of each epoch
         logging.info(f'--- Epoch {epoch_num}/{args.max_epochs}: Training loss = {loss:.4f}, Testing loss = {test_loss:.4f}, Best loss = {best_loss:.4f}, Best epoch = {best_epoch}')
 
-        if (epoch_num + 1) % args.save_interval == 0 or epoch_num >= args.max_epochs - 1 or epoch_num >= args.stop_epoch - 1:
+        if (epoch_num + 1) % 2 == 0 or epoch_num >= args.max_epochs - 1 or epoch_num >= args.stop_epoch - 1:
             save_mode_path = os.path.join(snapshot_path, 'epoch_{:03d}.pth'.format(epoch_num))
             torch.save(model.state_dict(), save_mode_path)
             logging.info("Model saved to {}".format(save_mode_path))
