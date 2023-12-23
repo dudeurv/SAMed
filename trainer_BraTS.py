@@ -18,6 +18,7 @@ from utils import DiceLoss, Focal_loss
 from torchvision import transforms
 from icecream import ic
 
+from eval_BraTS import test_per_epoch, calculate_confusion_matrix_from_arrays, calculate_dice, vis_per_epoch
 
 def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     low_res_logits = outputs['low_res_logits']
@@ -26,16 +27,6 @@ def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
     loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
     return loss, loss_ce, loss_dice
 
-def test_per_epoch(model, testloader, loss_fn, device):
-    model.eval()
-    loss_per_epoch = []
-    with torch.no_grad():
-        for batch_idx, (images, labels) in enumerate(testloader):
-            images, labels = images.unsqueeze(1).to(device, dtype=torch.float32), labels.to(device, dtype=torch.long)
-            logits = model(images)
-            loss = loss_fn(logits, labels)
-            loss_per_epoch.append(loss.item())
-    return torch.tensor(loss_per_epoch).mean().item()
 
 def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     from dataset_BraTS import BraTS_dataset
@@ -154,3 +145,18 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
 
     writer.close()
     return "Training Finished!"
+
+    num_classes = 4  # Set the number of classes as per your specific task
+    model.load_state_dict(torch.load(os.path.join(snapshot_path, 'model_best_epoch_{:03d}.pth'.format(best_epoch))))
+
+    # Define evaluation batch size and create a DataLoader for the test set
+    eval_batch_size = 80
+    test_loader = DataLoader(test_dataset, batch_size=eval_batch_size, shuffle=False, num_workers=2)
+    
+    # Assume vis_per_epoch is defined and calculates class-wise and overall Dice scores
+    dices_per_class = vis_per_epoch(model, test_loader)
+    dices_per_class_list = np.array(list(dices_per_class.values()))
+    logging.info('Class Wise Dice: {}'.format(dices_per_class))
+    logging.info('Overall Dice: {:.4f}'.format(np.mean(dices_per_class_list)))
+
+    return "Evaluation Finished!"
