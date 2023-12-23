@@ -18,15 +18,7 @@ from utils import DiceLoss, Focal_loss
 from torchvision import transforms
 from icecream import ic
 
-from eval_BraTS import test_per_epoch, vis_per_epoch
-
-def calc_loss(outputs, label_batch, ce_loss, dice_loss, dice_weight:float=0.8):
-    low_res_logits = outputs['low_res_logits']
-    loss_ce = ce_loss(low_res_logits, label_batch[:].long())
-    loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
-    loss = (1 - dice_weight) * loss_ce + dice_weight * loss_dice
-    return loss, loss_ce, loss_dice
-
+from eval_BraTS import test_per_epoch, vis_per_epoch, calc_loss
 
 def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     from dataset_BraTS import BraTS_dataset
@@ -52,8 +44,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
     if args.n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
-    ce_loss = CrossEntropyLoss(ignore_index=128)
-    dice_loss = DiceLoss(num_classes + 1)
+
     if args.warmup:
         b_lr = base_lr / args.warmup_period
     else:
@@ -87,7 +78,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             outputs = model(image_batch, multimask_output, args.img_size)
             # Check the shape and content of the model output
 
-            loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, ce_loss, dice_loss, args.dice_param)
+            loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, args.dice_param)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
