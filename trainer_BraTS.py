@@ -78,7 +78,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
             outputs = model(image_batch, multimask_output, args.img_size)
             # Check the shape and content of the model output
 
-            loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, args.dice_param)
+            loss, loss_ce, loss_dice = calc_loss(outputs, label_batch, args.dice_param, num_classes)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
