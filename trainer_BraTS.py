@@ -123,7 +123,7 @@ def trainer_BraTS(args, model, snapshot_path, multimask_output, low_res):
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
         # Testing at the end of each epoch
-        loss_testing = test_per_epoch(model, testloader, ce_loss, device=args.device)  # Make sure to define device in args or elsewhere
+        loss_testing = test_per_epoch(model, testloader, ce_loss, "cuda")  # Make sure to define device in args or elsewhere
 
         # Update best model if current epoch's loss is lower
         if loss_testing < best_loss:
