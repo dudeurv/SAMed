@@ -23,7 +23,7 @@ def test_per_epoch(model, testloader, multimask_output, img_size):
     loss_ce_per_epoch = []
     loss_dice_per_epoch = []
     
-    num_classes = 4
+    num_classes = 8
     with torch.no_grad():
         for i_batch, (image_batch, label_batch) in enumerate(testloader):
 
