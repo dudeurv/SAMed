@@ -29,26 +29,15 @@ def test_per_epoch(model, testloader, multimask_output, img_size):
 
             image_batch, label_batch = image_batch.unsqueeze(1).float().cuda(), label_batch.unsqueeze(1).cuda()
             image_batch = image_batch.repeat(1, 3, 1, 1)
-
-            print(f"label batch 1 {label_batch.shape}")
             
             label_batch = F.interpolate(label_batch, size=(128, 128), mode='nearest') 
             label_batch = label_batch.squeeze(1)
 
-            print(f"label batch 2 {label_batch.shape}")
-
             label_batch = torch.clamp(label_batch, 0, num_classes-1)
-
-            print(f"label batch 3 {label_batch.shape}")
         
             output = model(image_batch, multimask_output, img_size)
-            
-            ce_loss = CrossEntropyLoss(ignore_index=128)
-            dice_loss = DiceLoss(num_classes + 1)
-            low_res_logits = output['low_res_logits']
-            loss_ce = ce_loss(low_res_logits, label_batch[:].long())
-            loss_dice = dice_loss(low_res_logits, label_batch, softmax=True)
-            loss = (1 - dice_weight) * loss_ce + 0.8 * loss_dice
+
+            loss, loss_ce, loss_dice = calc_loss(output, label_batch, 0.8, num_classes)
 
             loss_per_epoch.append(loss.item())
             loss_ce_per_epoch.append(loss_ce.item())
@@ -99,7 +88,7 @@ def calculate_dice(confusion_matrix):
 # Define a function to test the model for an epoch and visualize the results
 def vis_per_epoch(model, testloader, multimask_output, img_size):
     model.eval()  
-    num_classes = 4
+    num_classes = 8
     fig, axs = plt.subplots(len(testloader), 3, figsize=(1*3, len(testloader)*1), subplot_kw=dict(xticks=[],yticks=[]))
     confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.uint32)
 
