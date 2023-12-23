@@ -30,7 +30,7 @@ def test_per_epoch(model, testloader, loss_fn, multimask_output, img_size):
             label_batch = torch.clamp(label_batch, 0, num_classes-1)
         
             output = model(image_batch, multimask_output, img_size)
-            loss, loss_ce, loss_dice = calc_loss(output, label_batch, dice_weight:float=0.8)
+            loss, loss_ce, loss_dice = calc_loss(output, label_batch, 0.8)
             loss_per_epoch.append(loss.item())
             
     return torch.tensor(loss_per_epoch).mean().item()
