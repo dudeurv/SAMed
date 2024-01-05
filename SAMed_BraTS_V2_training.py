@@ -1,3 +1,8 @@
+import os
+
+# Change directory to 'desired/path'
+os.chdir('/content/samed_codes')
+
 import sys
 from tqdm import tqdm
 import logging
