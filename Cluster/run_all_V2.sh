@@ -9,10 +9,10 @@
 module load python/3.8
 
 # Activate the virtual environment
-source /home/ududeja/LapVideoUS-SUSI/bin/activate
+source /cluster/project7/SAMed/LapVideoUS-SUSI/bin/activate
 
 # Navigate to the directory containing the scripts
-cd /home/ududeja
+cd /cluster/project7/SAMed
 
 # Run the setup script
 echo "Running SAMed_BraTS_setup.py..."
