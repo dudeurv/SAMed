@@ -1,12 +1,9 @@
 #!/bin/bash -l
 #$ -l gpu=1
-#$ -l h_rt=0:10:0
-#$ -l tmem=1G
+#$ -l h_rt=5:00:0
+#$ -l tmem=16G
 #$ -N myJobName
 #$ -wd /home/ududeja
-
-# Load the Python module
-module load python/3.8
 
 # Activate the virtual environment
 source /cluster/project7/SAMed/LapVideoUS-SUSI/bin/activate
