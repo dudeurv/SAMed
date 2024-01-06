@@ -1,9 +1,11 @@
 #!/bin/bash -l
+#$ -l gpu=true
 #$ -l gpu=1
-#$ -l h_rt=5:00:0
+#$ -l h_rt=1:00:0
 #$ -l tmem=16G
 #$ -N myJobName
 #$ -wd /home/ududeja
+
 
 # Activate the virtual environment
 source /cluster/project7/SAMed/LapVideoUS-SUSI/bin/activate
