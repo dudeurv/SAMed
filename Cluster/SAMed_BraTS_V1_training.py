@@ -114,7 +114,7 @@ def main():
     parser.add_argument('--module', type=str, default='sam_lora_image_encoder')
 
     parser.add_argument('--base_lr', type=float, default=0.005, help='segmentation network learning rate')
-    parser.add_argument('--batch_size', type=int, default=12, help='batch_size per gpu')
+    parser.add_argument('--batch_size', type=int, default=1, help='batch_size per gpu')
     parser.add_argument('--warmup', type=bool, default=True, help='If activated, warp up the learning from a lower lr to the base_lr')
     parser.add_argument('--warmup_period', type=int, default=250, help='Warp up iterations, only valid whrn warmup is activated')
     parser.add_argument('--AdamW', type=bool, default=True, help='If activated, use AdamW to finetune SAM model')
