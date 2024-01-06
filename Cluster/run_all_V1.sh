@@ -27,7 +27,7 @@ fi
 # Check if data loading was successful, then run the training script
 if [ $? -eq 0 ]; then
     echo "Data loading completed successfully. Proceeding to SAMed_BraTS_V2_training.py..."
-    python SAMed_BraTS_V1_training.py
+    python SAMed_BraTS_V1_training.py --max_epochs 1
 else
     echo "Data loading failed. Exiting..."
     exit 1
