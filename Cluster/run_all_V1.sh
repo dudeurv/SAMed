@@ -4,6 +4,8 @@
 #$ -l h_rt=1:00:0
 #$ -l tmem=16G
 #$ -N myJobName
+# log file path
+#$ -o /home/ududeja/logs
 #$ -wd /home/ududeja
 
 
